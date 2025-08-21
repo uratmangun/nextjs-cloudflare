@@ -96,8 +96,11 @@ jobs:
             echo "No existing projects found matching pattern: ${REPO_PATTERN}*"
           fi
 
-      - name: Generate dynamic project name
+      - name: Generate project name and create Cloudflare Pages project
         id: generate-project-name
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           # Get repository name
           REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
@@ -118,6 +121,35 @@ jobs:
           PROJECT_NAME=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
           
           echo "Generated project name: $PROJECT_NAME"
+          
+          # Create Cloudflare Pages project
+          echo "Creating Cloudflare Pages project: $PROJECT_NAME"
+          CREATE_RESPONSE=$(curl -s -X POST \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"name\": \"${PROJECT_NAME}\",
+              \"production_branch\": \"main\",
+              \"build_config\": {
+                \"build_command\": \"pnpm run pages:build\",
+                \"destination_dir\": \".vercel/output/static\",
+                \"root_dir\": \"/\"
+              }
+            }")
+          
+          # Check if project creation was successful
+          SUCCESS=$(echo "$CREATE_RESPONSE" | jq -r '.success')
+          if [ "$SUCCESS" = "true" ]; then
+            echo "Successfully created Cloudflare Pages project: $PROJECT_NAME"
+            PROJECT_ID=$(echo "$CREATE_RESPONSE" | jq -r '.result.id')
+            echo "Project ID: $PROJECT_ID"
+          else
+            echo "Failed to create Cloudflare Pages project"
+            echo "Response: $CREATE_RESPONSE"
+            exit 1
+          fi
+          
           echo "project_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
 
       - name: Deploy to Cloudflare Pages (Production)
