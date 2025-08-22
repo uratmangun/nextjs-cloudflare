@@ -83,10 +83,3 @@ ENVIRONMENT = "production"
 [dev]
 port = 8788
 local_protocol = "http"
-
-# Deployment configuration
-[[deployments]]
-name = "production"
-
-[[deployments]]
-name = "preview"
