@@ -48,25 +48,45 @@ const nextConfig = {
     ]
   },
   
-  // Webpack configuration for Cloudflare compatibility
+  // Webpack configuration for Cloudflare Workers compatibility
   webpack: (config, { isServer }) => {
-    if (!isServer) {
-      // Ensure compatibility with Cloudflare Workers
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-        crypto: false,
-        path: false,
-        os: false,
-        stream: false,
-        buffer: false,
-      };
+    // Exclude Node.js built-ins for both server and client
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      // Node.js built-ins that aren't available in Cloudflare Workers
+      async_hooks: false,
+      fs: false,
+      net: false,
+      tls: false,
+      crypto: false,
+      path: false,
+      os: false,
+      stream: false,
+      buffer: false,
+      util: false,
+      url: false,
+      querystring: false,
+      string_decoder: false,
+      events: false,
+      http: false,
+      https: false,
+      zlib: false,
+      child_process: false,
+      worker_threads: false,
+      cluster: false,
+      dgram: false,
+      dns: false,
+      module: false,
+      readline: false,
+      repl: false,
+      vm: false,
+    };
+
+    // Exclude problematic modules from bundling
+    config.externals = config.externals || [];
+    if (isServer) {
+      config.externals.push('async_hooks');
     }
-    
-    // Add custom webpack rules if needed
-    // SVG support can be added with @svgr/webpack if needed
     
     return config;
   },

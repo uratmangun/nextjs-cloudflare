@@ -48,7 +48,7 @@ pnpm-debug.log*
 next-env.d.ts
 
 # Cloudflare specific
-wrangler.toml
+# wrangler.toml - keeping in repo for local development
 .wrangler/
 .dev.vars
 _headers
