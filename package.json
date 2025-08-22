@@ -11,7 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "pages:build": "pnpx @cloudflare/next-on-pages",
+    "pages:build": "next build && pnpx @cloudflare/next-on-pages",
     "preview": "pnpm run pages:build && wrangler pages dev",
     "deploy": "pnpm run pages:build && wrangler pages deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv env.d.ts"
@@ -24,7 +24,7 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
-    "@cloudflare/next-on-pages": "^1.13.2",
+    "@cloudflare/next-on-pages": "^1.13.5",
     "@cloudflare/workers-types": "^4.20240821.1",
     "@types/node": "^22.5.0",
     "@types/react": "^18.3.4",

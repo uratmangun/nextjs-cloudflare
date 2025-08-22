@@ -39,15 +39,12 @@ jobs:
       - name: Type check
         run: pnpm run type-check
 
-      - name: Build Next.js application
-        run: pnpm run build
-        env:
-          NODE_ENV: production
-
       - name: Build for Cloudflare Pages
         run: pnpm run pages:build
         env:
           NODE_ENV: production
+          NEXT_TELEMETRY_DISABLED: 1
+          NODE_OPTIONS: "--max-old-space-size=4096"
 
       - name: Check and delete existing matching projects
         id: cleanup-projects
@@ -133,7 +130,7 @@ jobs:
               \"production_branch\": \"main\",
               \"build_config\": {
                 \"build_command\": \"pnpm run pages:build\",
-                \"destination_dir\": \".vercel/output/static\",
+                \"destination_dir\": \"/\",
                 \"root_dir\": \"/\"
               },
               \"deployment_configs\": {
