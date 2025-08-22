@@ -25,7 +25,7 @@ importers:
         version: 0.0.1
     devDependencies:
       '@cloudflare/next-on-pages':
-        specifier: ^1.13.5
+        specifier: ^1.13.14
         version: 1.13.14(@cloudflare/workers-types@4.20250821.0)(vercel@37.14.0)(wrangler@3.114.14(@cloudflare/workers-types@4.20250821.0))
       '@cloudflare/workers-types':
         specifier: ^4.20240821.1

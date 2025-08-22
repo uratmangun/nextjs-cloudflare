@@ -5,40 +5,72 @@ const fs = require('fs');
 const path = require('path');
 
 const polyfillContent = `// Auto-generated polyfill for async_hooks in Cloudflare Workers
-export const AsyncLocalStorage = class {
+// This provides minimal implementations for Cloudflare Workers compatibility
+
+export class AsyncLocalStorage {
   constructor() {
-    this.store = new Map();
+    this._store = new Map();
   }
   
   run(store, callback, ...args) {
-    return callback(...args);
+    // In Workers, we can't truly track async context, so we just execute the callback
+    const previousStore = this._store;
+    this._store = store;
+    try {
+      return callback(...args);
+    } finally {
+      this._store = previousStore;
+    }
   }
   
   getStore() {
-    return undefined;
+    return this._store;
   }
-};
+  
+  enterWith(store) {
+    this._store = store;
+  }
+  
+  disable() {
+    this._store = new Map();
+  }
+}
 
 export const createHook = () => ({
   enable: () => {},
   disable: () => {},
 });
 
-export const executionAsyncId = () => 0;
+export const executionAsyncId = () => 1;
 export const triggerAsyncId = () => 0;
+export const executionAsyncResource = () => null;
 
 export default {
   AsyncLocalStorage,
   createHook,
   executionAsyncId,
   triggerAsyncId,
-};`;
+  executionAsyncResource,
+};
+
+// Also export as CommonJS for compatibility
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    AsyncLocalStorage,
+    createHook,
+    executionAsyncId,
+    triggerAsyncId,
+    executionAsyncResource,
+  };
+}`;
 
 // Try multiple possible locations where the build output might be
 const possiblePaths = [
   '.vercel/output/static/_worker.js/__next-on-pages-dist__/functions',
   '.vercel/output/static/__next-on-pages-dist__/functions',
   '.vercel/output/functions/__next-on-pages-dist__/functions',
+  '.vercel/output/static/_worker.js/chunks',
+  '.vercel/output/static/_worker.js',
 ];
 
 let created = false;
@@ -95,13 +127,21 @@ if (fs.existsSync(workerPath)) {
         console.log(`  Replacing import: ${match}`);
         return `// Polyfilled async_hooks import
 const AsyncLocalStorage = class {
-  constructor() { this.store = new Map(); }
-  run(store, callback, ...args) { return callback(...args); }
-  getStore() { return undefined; }
+  constructor() { this._store = new Map(); }
+  run(store, callback, ...args) { 
+    const previousStore = this._store;
+    this._store = store;
+    try { return callback(...args); } 
+    finally { this._store = previousStore; }
+  }
+  getStore() { return this._store; }
+  enterWith(store) { this._store = store; }
+  disable() { this._store = new Map(); }
 };
 const createHook = () => ({ enable: () => {}, disable: () => {} });
-const executionAsyncId = () => 0;
-const triggerAsyncId = () => 0;`;
+const executionAsyncId = () => 1;
+const triggerAsyncId = () => 0;
+const executionAsyncResource = () => null;`;
       }
     );
     
@@ -110,13 +150,21 @@ const triggerAsyncId = () => 0;`;
       /require\(["']__next-on-pages-dist__\/functions\/async_hooks["']\)/g,
       `({ 
         AsyncLocalStorage: class {
-          constructor() { this.store = new Map(); }
-          run(store, callback, ...args) { return callback(...args); }
-          getStore() { return undefined; }
+          constructor() { this._store = new Map(); }
+          run(store, callback, ...args) { 
+            const previousStore = this._store;
+            this._store = store;
+            try { return callback(...args); } 
+            finally { this._store = previousStore; }
+          }
+          getStore() { return this._store; }
+          enterWith(store) { this._store = store; }
+          disable() { this._store = new Map(); }
         },
         createHook: () => ({ enable: () => {}, disable: () => {} }),
-        executionAsyncId: () => 0,
-        triggerAsyncId: () => 0
+        executionAsyncId: () => 1,
+        triggerAsyncId: () => 0,
+        executionAsyncResource: () => null
       })`
     );
     
@@ -128,17 +176,25 @@ const triggerAsyncId = () => 0;`;
     console.log('📝 Found other async_hooks references, adding polyfill definitions...');
     
     // Add polyfill at the beginning of the file
-    const polyfillDef = `// Global async_hooks polyfill
+    const polyfillDef = `// Global async_hooks polyfill for Cloudflare Workers
 if (!globalThis.async_hooks) {
   globalThis.async_hooks = {
     AsyncLocalStorage: class {
-      constructor() { this.store = new Map(); }
-      run(store, callback, ...args) { return callback(...args); }
-      getStore() { return undefined; }
+      constructor() { this._store = new Map(); }
+      run(store, callback, ...args) { 
+        const previousStore = this._store;
+        this._store = store;
+        try { return callback(...args); } 
+        finally { this._store = previousStore; }
+      }
+      getStore() { return this._store; }
+      enterWith(store) { this._store = store; }
+      disable() { this._store = new Map(); }
     },
     createHook: () => ({ enable: () => {}, disable: () => {} }),
-    executionAsyncId: () => 0,
-    triggerAsyncId: () => 0
+    executionAsyncId: () => 1,
+    triggerAsyncId: () => 0,
+    executionAsyncResource: () => null
   };
 }
 `;

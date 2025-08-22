@@ -1,11 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable React strict mode for better development experience
+  experimental: {
+    runtime: 'edge',
+  },
   reactStrictMode: true,
-  
-  // Optimize for production
   swcMinify: true,
-  
   // Disable image optimization for Cloudflare Pages
   images: {
     unoptimized: true,

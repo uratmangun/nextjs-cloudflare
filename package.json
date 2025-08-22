@@ -18,13 +18,13 @@
   },
   "dependencies": {
     "next": "14.2.5",
+    "next-themes": "^0.3.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "next-themes": "^0.3.0",
     "server-only": "^0.0.1"
   },
   "devDependencies": {
-    "@cloudflare/next-on-pages": "^1.13.5",
+    "@cloudflare/next-on-pages": "^1.13.14",
     "@cloudflare/workers-types": "^4.20240821.1",
     "@types/node": "^22.5.0",
     "@types/react": "^18.3.4",
