@@ -55,6 +55,7 @@ _headers
 _redirects
 _routes.json
 .vercel/output/
+.open-next/
 
 # Cloudflare Pages
 .cloudflare/

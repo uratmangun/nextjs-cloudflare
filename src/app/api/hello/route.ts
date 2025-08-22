@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { CloudflareEnv } from '@/../../env';
 
-export const runtime = 'edge'; // Enable edge runtime
+// OpenNext/Cloudflare Workers runs at the edge by default
 
 export async function GET(request: NextRequest) {
   try {

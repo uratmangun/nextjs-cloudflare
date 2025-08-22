@@ -11,12 +11,13 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "pages:build": "next build && pnpx @cloudflare/next-on-pages && node scripts/fix-async-hooks.js",
-    "preview": "pnpm run pages:build && wrangler pages dev",
-    "deploy": "pnpm run pages:build && wrangler pages deploy",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv env.d.ts"
+    "workers:build": "opennextjs-cloudflare build",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
+    "@opennextjs/cloudflare": "^1.6.5",
     "next": "14.2.5",
     "next-themes": "^0.3.0",
     "react": "18.3.1",
@@ -24,7 +25,6 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
-    "@cloudflare/next-on-pages": "^1.13.14",
     "@cloudflare/workers-types": "^4.20240821.1",
     "@types/node": "^22.5.0",
     "@types/react": "^18.3.4",
@@ -40,7 +40,7 @@
     "tailwindcss": "^3.4.10",
     "typescript": "^5.5.4",
     "vercel": "^37.1.1",
-    "wrangler": "^3.72.0"
+    "wrangler": "^4.32.0"
   },
   "engines": {
     "node": ">=18.17.0"

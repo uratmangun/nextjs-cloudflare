@@ -5,7 +5,7 @@ import { StatsSection } from '@/components/sections/stats';
 import { CTASection } from '@/components/sections/cta';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
-export const runtime = 'edge'; // Enable edge runtime for this page
+// OpenNext/Cloudflare Workers runs at the edge by default
 
 export default function HomePage() {
   return (
