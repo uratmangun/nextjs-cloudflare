@@ -85,9 +85,10 @@ const nextConfig = {
     // Note: async_hooks is handled via alias polyfill, not externals
 
     // Add module replacement for async_hooks specifically
+    const path = require('path');
     config.resolve.alias = {
       ...config.resolve.alias,
-      'async_hooks': require.resolve('./polyfills/async_hooks.js'),
+      'async_hooks': path.resolve(__dirname, 'polyfills/async_hooks.js'),
     };
     
     return config;

@@ -11,7 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "pages:build": "next build && pnpx @cloudflare/next-on-pages",
+    "pages:build": "next build && pnpx @cloudflare/next-on-pages && node scripts/fix-async-hooks.js",
     "preview": "pnpm run pages:build && wrangler pages dev",
     "deploy": "pnpm run pages:build && wrangler pages deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv env.d.ts"
