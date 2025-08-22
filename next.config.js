@@ -82,11 +82,13 @@ const nextConfig = {
       vm: false,
     };
 
-    // Exclude problematic modules from bundling
-    config.externals = config.externals || [];
-    if (isServer) {
-      config.externals.push('async_hooks');
-    }
+    // Note: async_hooks is handled via alias polyfill, not externals
+
+    // Add module replacement for async_hooks specifically
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'async_hooks': require.resolve('./polyfills/async_hooks.js'),
+    };
     
     return config;
   },
