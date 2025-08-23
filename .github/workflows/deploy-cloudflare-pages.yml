@@ -46,7 +46,7 @@ jobs:
           NEXT_TELEMETRY_DISABLED: 1
           NODE_OPTIONS: "--max-old-space-size=4096"
 
-      - name: Check and delete existing matching projects
+      - name: Check and delete existing matching projects and workers
         id: cleanup-projects
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -56,7 +56,54 @@ jobs:
           REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
           REPO_PATTERN="${REPO_NAME}-"
           
-          echo "Checking for existing projects matching pattern: ${REPO_PATTERN}*"
+          echo "========================================="
+          echo "Cleaning up existing Workers and Pages"
+          echo "Pattern: ${REPO_PATTERN}*"
+          echo "========================================="
+          
+          # Step 1: Delete matching Workers
+          echo ""
+          echo "Step 1: Checking for existing Workers..."
+          
+          # List all Workers
+          WORKERS=$(curl -s -X GET \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json")
+          
+          # Extract worker names that match the pattern
+          MATCHING_WORKERS=$(echo "$WORKERS" | jq -r ".result[] | select(.id | startswith(\"${REPO_PATTERN}\")) | .id" || true)
+          
+          if [ -n "$MATCHING_WORKERS" ]; then
+            echo "Found matching Workers to delete:"
+            echo "$MATCHING_WORKERS"
+            echo ""
+            
+            # Delete each matching worker
+            while IFS= read -r WORKER; do
+              if [ -n "$WORKER" ]; then
+                echo "Deleting Worker: $WORKER"
+                DELETE_RESPONSE=$(curl -s -X DELETE \
+                  "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${WORKER}" \
+                  -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+                  -H "Content-Type: application/json")
+                
+                SUCCESS=$(echo "$DELETE_RESPONSE" | jq -r '.success')
+                if [ "$SUCCESS" = "true" ]; then
+                  echo "✓ Successfully deleted Worker: $WORKER"
+                else
+                  echo "⚠ Warning: Failed to delete Worker: $WORKER"
+                  echo "Response: $DELETE_RESPONSE"
+                fi
+              fi
+            done <<< "$MATCHING_WORKERS"
+          else
+            echo "No existing Workers found matching pattern: ${REPO_PATTERN}*"
+          fi
+          
+          # Step 2: Delete matching Pages projects
+          echo ""
+          echo "Step 2: Checking for existing Pages projects..."
           
           # List all Cloudflare Pages projects
           PROJECTS=$(curl -s -X GET \
@@ -68,13 +115,14 @@ jobs:
           MATCHING_PROJECTS=$(echo "$PROJECTS" | jq -r ".result[] | select(.name | startswith(\"${REPO_PATTERN}\")) | .name" || true)
           
           if [ -n "$MATCHING_PROJECTS" ]; then
-            echo "Found matching projects to delete:"
+            echo "Found matching Pages projects to delete:"
             echo "$MATCHING_PROJECTS"
+            echo ""
             
             # Delete each matching project
             while IFS= read -r PROJECT; do
               if [ -n "$PROJECT" ]; then
-                echo "Deleting project: $PROJECT"
+                echo "Deleting Pages project: $PROJECT"
                 DELETE_RESPONSE=$(curl -s -X DELETE \
                   "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${PROJECT}" \
                   -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
@@ -82,16 +130,21 @@ jobs:
                 
                 SUCCESS=$(echo "$DELETE_RESPONSE" | jq -r '.success')
                 if [ "$SUCCESS" = "true" ]; then
-                  echo "Successfully deleted project: $PROJECT"
+                  echo "✓ Successfully deleted Pages project: $PROJECT"
                 else
-                  echo "Warning: Failed to delete project: $PROJECT"
+                  echo "⚠ Warning: Failed to delete Pages project: $PROJECT"
                   echo "Response: $DELETE_RESPONSE"
                 fi
               fi
             done <<< "$MATCHING_PROJECTS"
           else
-            echo "No existing projects found matching pattern: ${REPO_PATTERN}*"
+            echo "No existing Pages projects found matching pattern: ${REPO_PATTERN}*"
           fi
+          
+          echo ""
+          echo "========================================="
+          echo "Cleanup complete"
+          echo "========================================="
 
       - name: Generate worker name for deployment
         id: generate-worker-name
@@ -147,7 +200,7 @@ jobs:
           github-token: ${{ secrets.PAT_TOKEN }}
           script: |
             const workerName = '${{ steps.generate-worker-name.outputs.worker_name }}';
-            const homepageUrl = `https://${workerName}.workers.dev`;
+            const homepageUrl = `https://${workerName}.uratmangun.workers.dev`;
             
             console.log(`Updating repository homepage to: ${homepageUrl}`);
             
